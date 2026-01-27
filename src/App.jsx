@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import { jsPDF } from 'jspdf'
 
 // User needs voor nieuwsverhalen
 const USER_NEEDS = [
@@ -213,6 +214,176 @@ function App() {
     return '📎'
   }
 
+  const exportToPDF = () => {
+    if (ideas.length === 0) {
+      alert('Er zijn geen ideeën om te exporteren')
+      return
+    }
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 20
+    const maxWidth = pageWidth - (margin * 2)
+    let yPosition = margin
+
+    // Header
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Nieuwsverhaal Ideeën', margin, yPosition)
+
+    yPosition += 8
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'normal')
+    doc.text('RTV Oost', margin, yPosition)
+
+    yPosition += 10
+    doc.setFontSize(10)
+    doc.text(`Gegenereerd op: ${formatDate(new Date().toISOString())}`, margin, yPosition)
+
+    yPosition += 5
+    doc.setLineWidth(0.5)
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 10
+
+    // Ideas
+    ideas.forEach((idea, index) => {
+      // Check if we need a new page
+      if (yPosition > pageHeight - 60) {
+        doc.addPage()
+        yPosition = margin
+      }
+
+      // Title and Rating
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${index + 1}. ${idea.title}`, margin, yPosition)
+
+      const stars = '★'.repeat(idea.rating) + '☆'.repeat(5 - idea.rating)
+      const titleWidth = doc.getTextWidth(`${index + 1}. ${idea.title}`)
+      doc.setFontSize(12)
+      doc.text(stars, margin + titleWidth + 5, yPosition)
+
+      yPosition += 7
+
+      // Summary
+      if (idea.summary) {
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'italic')
+        const summaryLines = doc.splitTextToSize(idea.summary, maxWidth)
+        doc.text(summaryLines, margin, yPosition)
+        yPosition += summaryLines.length * 5 + 3
+      }
+
+      // Meta information
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+
+      if (idea.location) {
+        doc.text(`Plaats: ${idea.location}`, margin, yPosition)
+        yPosition += 5
+      }
+
+      if (idea.userNeed) {
+        doc.text(`User Need: ${idea.userNeed}`, margin, yPosition)
+        yPosition += 5
+      }
+
+      if (idea.mediaTypes.length > 0) {
+        doc.text(`Media: ${idea.mediaTypes.join(', ')}`, margin, yPosition)
+        yPosition += 5
+      }
+
+      if (idea.contact) {
+        doc.text(`Contact: ${idea.contact}${idea.phone ? ` - ${idea.phone}` : ''}`, margin, yPosition)
+        yPosition += 5
+      }
+
+      // Content
+      if (idea.content) {
+        yPosition += 3
+        doc.setFont('helvetica', 'bold')
+        doc.text('Beschrijving:', margin, yPosition)
+        yPosition += 5
+
+        doc.setFont('helvetica', 'normal')
+        const contentLines = doc.splitTextToSize(idea.content, maxWidth)
+        doc.text(contentLines, margin, yPosition)
+        yPosition += contentLines.length * 5 + 3
+      }
+
+      // Pitch Line
+      if (idea.pitchLine) {
+        // Check if we need a new page for pitch line
+        if (yPosition > pageHeight - 30) {
+          doc.addPage()
+          yPosition = margin
+        }
+
+        doc.setFillColor(255, 249, 230)
+        doc.rect(margin - 2, yPosition - 3, maxWidth + 4, 8 + (doc.splitTextToSize(idea.pitchLine, maxWidth - 10).length * 5), 'F')
+
+        doc.setFont('helvetica', 'bold')
+        doc.text('Pitch:', margin, yPosition)
+        yPosition += 5
+
+        doc.setFont('helvetica', 'italic')
+        const pitchLines = doc.splitTextToSize(idea.pitchLine, maxWidth - 10)
+        doc.text(pitchLines, margin + 5, yPosition)
+        yPosition += pitchLines.length * 5 + 3
+      }
+
+      // Comments
+      if (idea.comments) {
+        yPosition += 2
+        doc.setFont('helvetica', 'bold')
+        doc.text('Opmerkingen:', margin, yPosition)
+        yPosition += 5
+
+        doc.setFont('helvetica', 'normal')
+        const commentLines = doc.splitTextToSize(idea.comments, maxWidth)
+        doc.text(commentLines, margin, yPosition)
+        yPosition += commentLines.length * 5 + 3
+      }
+
+      // Attachments
+      if (idea.attachments && idea.attachments.length > 0) {
+        doc.setFont('helvetica', 'bold')
+        doc.text(`Bijlagen: ${idea.attachments.length} bestand(en)`, margin, yPosition)
+        yPosition += 5
+
+        doc.setFont('helvetica', 'normal')
+        idea.attachments.forEach(att => {
+          doc.text(`  - ${att.name}`, margin, yPosition)
+          yPosition += 4
+        })
+        yPosition += 3
+      }
+
+      // Date
+      if (idea.createdAt) {
+        doc.setFontSize(8)
+        doc.setTextColor(128, 128, 128)
+        doc.text(`Aangemaakt: ${formatDate(idea.createdAt)}`, margin, yPosition)
+        doc.setTextColor(0, 0, 0)
+        yPosition += 5
+      }
+
+      // Separator
+      yPosition += 5
+      if (index < ideas.length - 1) {
+        doc.setLineWidth(0.3)
+        doc.setDrawColor(200, 200, 200)
+        doc.line(margin, yPosition, pageWidth - margin, yPosition)
+        yPosition += 10
+      }
+    })
+
+    // Save PDF
+    const filename = `nieuwsideeen_${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(filename)
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -220,9 +391,16 @@ function App() {
         <p>RTV Oost</p>
       </header>
 
-      <button className="add-button" onClick={() => openModal()}>
-        + Nieuw Idee
-      </button>
+      <div className="action-buttons">
+        <button className="add-button" onClick={() => openModal()}>
+          + Nieuw Idee
+        </button>
+        {ideas.length > 0 && (
+          <button className="export-button" onClick={exportToPDF}>
+            📄 Exporteer naar PDF
+          </button>
+        )}
+      </div>
 
       <div className="ideas-list">
         {ideas.length === 0 ? (

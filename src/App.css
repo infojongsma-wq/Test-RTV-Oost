@@ -30,12 +30,20 @@
   font-weight: 500;
 }
 
-/* Add Button */
-.add-button {
-  display: block;
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
   margin: 24px auto;
+  padding: 0 20px;
+  flex-wrap: wrap;
+}
+
+.add-button,
+.export-button {
   padding: 14px 32px;
-  background: #2a5298;
   color: white;
   border: none;
   border-radius: 24px;
@@ -44,12 +52,43 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(42, 82, 152, 0.3);
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-button {
+  background: #2a5298;
 }
 
 .add-button:hover {
   background: #1e3c72;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(42, 82, 152, 0.4);
+}
+
+.export-button {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.export-button:hover {
+  background: linear-gradient(135deg, #15803d 0%, #14532d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.4);
+}
+
+@media (max-width: 640px) {
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .add-button,
+  .export-button {
+    width: 100%;
+    max-width: 300px;
+  }
 }
 
 /* Ideas List */
